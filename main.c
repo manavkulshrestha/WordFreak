@@ -7,10 +7,11 @@
 #include "hashmap.h"
 
 #define BUFFER_LEN 100
-#define MAP_LEN 131 // Arbitrary prime number, will be changed later if more capacity is needed
+// #define MAP_LEN 131 // Arbitrary prime number, will be changed later if more capacity is needed
+#define MAP_LEN 5000
 
 /*
-MAIN FUNCTION REVAMP
+MAIN FUNCTION REVAMP (remove io functions etc)
 JUMP EFFIENCIENY
 REHASH FUNCTION (increase size)
 HASH FUNCTION

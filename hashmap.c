@@ -19,17 +19,25 @@ HashEntry *hashentry(char *word){
     return new_entry;
 }
 
-int *hash(char *word) {
-    
-    return 0;
+// rudimentory. Feel free to change @Anthony
+int *hash(char *word, int map_len) {
+    int *code = (int *) malloc(sizeof(int));
+    *code = 0;
+
+    for(int i=0; i<strlen(word); i++) {
+        *code += (int) word[i];
+    }
+
+    return code;
 }
 
 void add(int map_len, HashEntry *hash_map[map_len], char *word) {
-    int *index = hash(word);
+    int *index = hash(word, map_len);
 
     if(hash_map[*index] == NULL) {
         hash_map[*index] = hashentry(word);
     } else {
+        // dealing with hash collision using linked lists
         HashEntry *curr = hash_map[*index];
         while(1) {
             if(strncmp(curr->word, word) == 0)
@@ -48,4 +56,27 @@ void add(int map_len, HashEntry *hash_map[map_len], char *word) {
     index = NULL;
 
     return 0;
+}
+
+void free_hash_entry(HashEntry *entry) {
+    if(entry == NULL)
+        return;
+
+    free(entry->word);
+    entry->word = NULL;
+
+    free(entry->frequency);
+    entry->frequency = NULL
+
+    free_hash_entry(entry->link);
+    entry->link = NULL;
+}
+
+void free_map(int map_len, HashEntry *hash_map[map_len]) {
+    for(int i=0; i<map_len; i++) {
+        if(hash_map[i] != NULL) {
+            free_hash_entry(hash_map[i]);
+            hash_map[i] = NULL;
+        }
+    }
 }
