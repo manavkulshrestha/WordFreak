@@ -27,6 +27,7 @@ int *hash(char *word, int map_len) {
     for(int i=0; i<strlen(word); i++) {
         *code += (int) word[i];
     }
+    *code %= map_len;
 
     return code;
 }
