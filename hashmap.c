@@ -11,6 +11,8 @@ HashEntry *hashentry(char *word){
 
     *(new_entry->frequency) = 1;
 
+    new_entry->link = NULL
+
     free(len);
     len = NULL;
 
@@ -22,19 +24,23 @@ int *hash(char *word) {
     return 0;
 }
 
-int add(int map_len, HashEntry *hash_map[map_len], char *word) {
-    const int jump = 1;
+void add(int map_len, HashEntry *hash_map[map_len], char *word) {
     int *index = hash(word);
-    
-    while(1) {
-        if(hash_map[*index] == NULL) {
-            hash_map[*index] = hashentry(word);
-            break;
-        } else if(strncmp(hash_map[*index]->word, word) == 0) {
-            hash_map[*index]->frequency++;
-            break;
-        } else {
-            (*index) += jump;
+
+    if(hash_map[*index] == NULL) {
+        hash_map[*index] = hashentry(word);
+    } else {
+        HashEntry *curr = hash_map[*index];
+        while(1) {
+            if(strncmp(curr->word, word) == 0)
+                (*(curr->frequency))++;
+                break;
+            else if(curr->link == NULL) {
+                curr->link = hashentry(word);
+                break;
+            } else {
+                curr = curr->link;
+            }
         }
     }
 
