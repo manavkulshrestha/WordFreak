@@ -4,23 +4,21 @@
 #include <fcntl.h> // open flags
 #include <stdlib.h> // for malloc
 #include <errno.h>
+#include "hashbin.h"
 #include "hashmap.h"
 
 #define BUFFER_LEN 100
 // #define MAP_LEN 131 // Arbitrary prime number, will be changed later if more capacity is needed
-#define MAP_LEN 5000
+#define MAP_SIZE 5000
 
 /*
 MAIN FUNCTION REVAMP (remove io functions etc)
-JUMP EFFIENCIENY
-REHASH FUNCTION (increase size)
-HASH FUNCTION
+HASH IMPLMENTATION (deal with hash collisions using probing instead of chaining?)
+HASH FUNCTION (make it better)
 */
 
 int main(int argc, char *argv[], char *envp[]) {
-    HashEntry *hash_map[MAP_LEN];
-    for(int i=0; i<MAP_LEN; i++)
-        hash_map[i] = NULL;
+    HashMap *hash_map = hashmap(MAP_SIZE);
 
     if(argc < 2) {
         printf("Not enough arguments. argc = %i", argc);

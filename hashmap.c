@@ -1,51 +1,48 @@
+#include "hashbin.h"
 #include "hashmap.h"
 #include <string.h>
+#include <stdlib.h>
 
-HashEntry *hashentry(char *word){ 
-    HashEntry *new_entry = (HashEntry *) malloc(sizeof(HashEntry));
+HashMap *hashmap(int size) {
+    HashMap *hash_map = (HashMap *) malloc(sizeof(HashMap));
 
-    int *len = (int *) malloc(sizeof(int));
-    *len = strlen(word);
-    new_entry->word = (char *) malloc(((*len)+1)*sizeof(char));
-    strncpy(new_entry->word, word, *len+1);
+    *(hash_map->size) = size;
 
-    *(new_entry->frequency) = 1;
+    hash_map->arr = (HashBin **) malloc(size*sizeof(HashBin *));
+    for(int i=0; i<size; i++)
+        hash_map->arr[i] = NULL;
 
-    new_entry->link = NULL
-
-    free(len);
-    len = NULL;
-
-    return new_entry;
+    return hash_map;
 }
 
-// rudimentory. Feel free to change @Anthony
-int *hash(char *word, int map_len) {
+// rudimentory. Feel free to change to make it better @Anthony
+int *hash(char *word, int *map_size) {
     int *code = (int *) malloc(sizeof(int));
     *code = 0;
 
     for(int i=0; i<strlen(word); i++) {
         *code += (int) word[i];
     }
-    *code %= map_len;
+
+    *code = (*code * 2) % *map_size;
 
     return code;
 }
 
-void add(int map_len, HashEntry *hash_map[map_len], char *word) {
-    int *index = hash(word, map_len);
+void add(HashMap *hash_map, char *word) {
+    int *index = hash(word, hash_map->size);
 
-    if(hash_map[*index] == NULL) {
-        hash_map[*index] = hashentry(word);
+    if(hash_map->arr[*index] == NULL) {
+        hash_map->arr[*index] = hashbin(word);
     } else {
         // dealing with hash collision using linked lists
-        HashEntry *curr = hash_map[*index];
+        HashBin *curr = hash_map->arr[*index];
         while(1) {
-            if(strncmp(curr->word, word) == 0)
+            if(strcmp(curr->word, word) == 0) {
                 (*(curr->frequency))++;
                 break;
-            else if(curr->link == NULL) {
-                curr->link = hashentry(word);
+            } else if(curr->link == NULL) {
+                curr->link = hashbin(word);
                 break;
             } else {
                 curr = curr->link;
@@ -55,29 +52,21 @@ void add(int map_len, HashEntry *hash_map[map_len], char *word) {
 
     free(index);
     index = NULL;
-
-    return 0;
 }
 
-void free_hash_entry(HashEntry *entry) {
-    if(entry == NULL)
-        return;
-
-    free(entry->word);
-    entry->word = NULL;
-
-    free(entry->frequency);
-    entry->frequency = NULL
-
-    free_hash_entry(entry->link);
-    entry->link = NULL;
+void sort(HashMap *hash_map) {
+    qsort(hash_map->arr, *(hash_map->size), sizeof(hash_map), compare_bin);
 }
 
-void free_map(int map_len, HashEntry *hash_map[map_len]) {
-    for(int i=0; i<map_len; i++) {
-        if(hash_map[i] != NULL) {
-            free_hash_entry(hash_map[i]);
-            hash_map[i] = NULL;
+void free_map(HashMap *hash_map) {
+    free(hash_map->size);
+    hash_map->size = NULL;
+
+    for(int i=0; i<*(hash_map->size); i++) {
+        if(hash_map->arr[i] != NULL) {
+            free_bin(hash_map->arr[i]);
+            hash_map->arr[i] = NULL;
         }
     }
+    hash_map = NULL;
 }

@@ -1,14 +1,15 @@
 #ifndef HASHMAP_H_
 #define HASHMAP_H_
 
-typedef struct hashentry {
-    char *word;
-    int *frequency;
-    HashEntry *link;
-} HashEntry;
+typedef struct HashMap {
+    int *size;
+    HashBin **arr;
+} HashMap;
 
-HashEntry *hashentry(char *word);
-int *hash(char *word);
-void add(int map_len, HashEntry *hash_map[map_len], char *word);
+HashMap *hashmap(int size); 
+int *hash(char *word, int *map_size);
+void add(HashMap *hash_map, char *word);
+void sort(HashMap *map);
+void free_map(HashMap *map);
 
 #endif
