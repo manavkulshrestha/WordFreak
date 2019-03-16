@@ -19,8 +19,6 @@ HASH FUNCTION
 
 int main(int argc, char *argv[], char *envp[]) {
     HashEntry *hash_map[MAP_LEN];
-    for(int i=0; i<MAP_LEN; i++)
-        hash_map[i] = NULL;
 
     if(argc < 2) {
         printf("Not enough arguments. argc = %i", argc);
