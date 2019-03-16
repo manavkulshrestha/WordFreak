@@ -22,9 +22,9 @@ HashBin *hashbin(char *word){
 
 int compare_bin(const void *a, const void *b) {
     if(a == NULL)
-        return -1;
-    if(b == NULL)
         return 1;
+    if(b == NULL)
+        return -1;
     return *(((HashBin *)a)->frequency)-*(((HashBin *)b)->frequency);
 }
 
