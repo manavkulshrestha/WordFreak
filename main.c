@@ -51,7 +51,7 @@ int freak(int *text, HashMap *hash_map) {
 
         if(!IS_ALPHANUMERIC(word[*char_count])) {
             word[*char_count] == '\0'; // Terminate word
-            add(hash_map, word, 1); // Add word to hashmap (with dummy 1 as third parameter because making two different functions to add would be blasphemy)
+            free(add(hash_map, word, 1)); // Add word to hashmap (with dummy 1 as third parameter because making two different functions to add would be blasphemy)
             *char_count = 0; // Start new word
         }
     } while (*char_count != 0)
