@@ -7,7 +7,7 @@
 #include "hashbin.h"
 #include "hashmap.h"
 
-#define BUFFER_LEN 100
+#define MAX_WORD_LEN 30
 // #define MAP_LEN 131 // Arbitrary prime number, will be changed later if more capacity is needed
 #define MAP_SIZE 5000
 
@@ -34,14 +34,30 @@ int main(int argc, char *argv[], char *envp[]) {
             return errno;
         }
 
-        char *buffer = (char *) malloc(BUFFER_LEN*sizeof(char *)); // allocating buffer
-        int *bytes_read = (int *) malloc(sizeof(int));
+        char *buffer = (char *) malloc(sizeof(char)); // allocating buffer
+        char *word = (char *) malloc(MAX_WORD_LEN*sizeof(char)); 
+        int *char_count = (int *) malloc(sizeof(int));
+        *char_count = 0;
 
-        do {
-            *bytes_read = read(*text, buffer, BUFFER_LEN-1);
-            buffer[*bytes_read] = '\0'; // adding null terminating character at the end of bytes read
-            printf("%s", buffer);
-        } while(*bytes_read != 0);
+        /*
+            READING FILE BY WORD BY CHARACTER
+            Loop through the file by each character, saving each character in 'word'
+            If the character is a space or new line, add the null character to word to signify end of word,
+            then add the word to hashmap
+
+            We pass in 'word' to add since the HashBin constructor COPIES the passed in char*.
+            Thus, in-place reading of the word works as intended
+
+            Next word will start the index at 0, so each word is saved in 'word' sequentially
+        */
+        for (*char_count += read(*text, buffer, 1); *char_count != 0;) {
+            word[*char_count] = buffer;
+            if(word[*char_count] == ' ' || word[*char_count] == '\n') {
+                word[*char_count] == '\0'; // Terminate word
+                add(hash_map, word); // Add word to hashmap
+                *char_count = 0; // Start new word
+            }
+        }
 
 
         if(close(*text) == -1) {  // closing file
