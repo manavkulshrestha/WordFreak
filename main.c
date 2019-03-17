@@ -7,7 +7,8 @@
 #include "hashbin.h"
 #include "hashmap.h"
 
-#define IS_WHITESPACE(c) c == ' ' || c == '\n'
+// #define IS_WHITESPACE(c) c == ' ' || c == '\n'
+#define IS_ALPHANUMERIC(c) ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9')
 
 #define MAX_WORD_LEN 30
 #define MAP_SIZE 5000
@@ -29,83 +30,96 @@ int freak(int *text, HashMap *hash_map) {
     int *char_count = (int *) malloc(sizeof(int)); // current amount of chars in word
     *char_count = 0;
 
+    char *print_buffer = (char *) malloc(50*sizeof(char));
+
     do {
         
-        ssize_t i = read(*text, buffer, 1);
-        if(*i == -1) {
-            printf("Error reading file: errno = %i\n", errno);
-            return errno;
-        } else if(*i == 0) {
-            return 0;
+        ssize_t *i = (ssize_t *) malloc(sizeof(ssize_t));
+        *i = read(*text, buffer, 1);
+
+        switch(*i) {
+            case -1:
+                sprintf(print_buffer, "Error reading file: errno = %i", errno);
+                write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+                break; 
+            case 0:
+                return 0;
         }
         *char_count += i;
 
         word[*char_count] = buffer;
 
-        if(IS_WHITESPACE(word[*char_count])) {
+        if(!IS_ALPHANUMERIC(word[*char_count])) {
             word[*char_count] == '\0'; // Terminate word
             add(hash_map, word, 1); // Add word to hashmap (with dummy 1 as third parameter because making two different functions to add would be blasphemy)
             *char_count = 0; // Start new word
         }
     } while (*char_count != 0)
+
+    free(buffer);
+    buffer = NULL;
+
+    free(word);
+    word = NULL;
+
+    free(char_count);
+    char_count = NULL;
+
+    free_bin(print_buffer);
+    print_buffer = NULL;
 }
 
 int main(int argc, char *argv[]) {
     int *text = (int *) malloc(sizeof(int)); // File descriptor
     HashMap *hash_map = hashmap(MAP_SIZE);
+    char *print_buffer = (char *) malloc(sizeof(char));
 
-    word_freak = getenv("WORD_FREAK"); 
-    
-    if(argc == 1) {
+    switch(argc) {
+        case 1:
+            word_freak = getenv("WORD_FREAK"); 
 
-        /* READ FROM ENVIRONMENT VARIABLE */
-        if(word_freak != NULL) {
+            if(word_freak != NULL) {
+                /* READ FROM ENVIRONMENT VARIABLE */
+                *text = open(word_freak, O_RDONLY); // reading only
 
-            *text = open(word_freak, O_RDONLY); // reading only
+                if(*text == -1) {
+                    sprintf(print_buffer, "Error reading file: errno = %i", errno);
+                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+                    return errno;
+                }
 
-            if(*text == -1) {
-                printf("Error opening file %i: errno = %i\n", i, errno);
-                return errno;
+                freak(text, hash_map); // This is where the magic happens
+
+                if(close(*text) == -1) {  // closing file
+                    sprintf(print_buffer, "Error closing file: errno = %i", errno);
+                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+                    return errno;
+                }
+            } else {
+                
+                
+
             }
+            break;
+        default:
+             /* READ FROM *argv[] */
+            for(int i = 1; i < argc; i++) {
+                *text = open(argv[i], O_RDONLY); // reading only
 
-            freak(text); // This is where the magic happens
+                if(*text == -1) {
+                    sprintf(print_buffer, "Error opening file: errno = %i", errno);
+                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+                    return errno;
+                }
 
-            if(close(*text) == -1) {  // closing file
-                printf("Error closing file %i: errno = %i\n", i, errno);
-                return errno;
+                freak(text, hash_map); // This is wehre the magic happens
+
+                if(close(*text) == -1) {  // closing file
+                    sprintf(print_buffer, "Error closing file: errno = %i", errno);
+                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+                    return errno;
+                }
             }
-        
-        /* READ FROM STDIN PIPE */
-        } else {
-
-            
-
-        }
-
-    /* READ FROM COMMAND LINE ARGUMENTS */
-    } else {
-
-        if(argc < 2) {
-            printf("Not enough arguments. argc = %i", argc);
-            return argc;
-        }
-
-        // Loop through argv[]
-        for(int i = 1; i < argc; i++) {
-            *text = open(argv[i], O_RDONLY); // reading only
-
-            if(*text == -1) {
-                printf("Error opening file %i: errno = %i\n", i, errno);
-                return errno;
-            }
-
-            freak(text, hash_map); // This is wehre the magic happens
-
-            if(close(*text) == -1) {  // closing file
-                printf("Error closing file %i: errno = %i\n", i, errno);
-                return errno;
-            }
-        }
     }
 
     free(text);
