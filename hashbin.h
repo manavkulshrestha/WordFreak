@@ -7,7 +7,7 @@ typedef struct HashBin {
     struct HashBin *link;
 } HashBin;
 
-HashBin *hashbin(char *word);
+HashBin *hashbin(char *word, int frequency);
 int compare_bin(const void *a, const void *b);
 void free_bin(HashBin *bin);
 

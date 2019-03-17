@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-HashBin *hashbin(char *word){ 
+HashBin *hashbin(char *word, int frequency){ 
     HashBin *new_bin = (HashBin *) malloc(sizeof(HashBin));
 
     int *len = (int *) malloc(sizeof(int));
@@ -10,7 +10,7 @@ HashBin *hashbin(char *word){
     new_bin->word = (char *) malloc(((*len)+1)*sizeof(char));
     strncpy(new_bin->word, word, *len+1);
 
-    *(new_bin->frequency) = 1;
+    *(new_bin->frequency) = frequency;
 
     new_bin->link = NULL;
 

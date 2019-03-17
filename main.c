@@ -7,72 +7,115 @@
 #include "hashbin.h"
 #include "hashmap.h"
 
+#define IS_WHITESPACE(c) c == ' ' || c == '\n'
+
 #define MAX_WORD_LEN 30
-// #define MAP_LEN 131 // Arbitrary prime number, will be changed later if more capacity is needed
 #define MAP_SIZE 5000
 
 /*
-MAIN FUNCTION REVAMP (remove io functions etc)
-HASH IMPLMENTATION (deal with hash collisions using probing instead of chaining?)
-HASH FUNCTION (make it better)
-*/
+    READING FILE BY WORD BY CHARACTER
+    Loop through the file by each character, saving each character in 'word'
+    If the character is a space or new line, add the null character to word to signify end of word,
+    then add the word to hashmap
 
-int main(int argc, char *argv[], char *envp[]) {
+    We pass in 'word' to add since the HashBin constructor COPIES the passed in char*.
+    Thus, in-place reading of the word works as intended
+
+    Next word will start the index at 0, so each word is saved in 'word' sequentially
+*/
+int freak(int *text, HashMap *hash_map) {
+    char *buffer = (char *) malloc(sizeof(char)); // allocating buffer
+    char *word = (char *) malloc(MAX_WORD_LEN*sizeof(char)); // in-place current word
+    int *char_count = (int *) malloc(sizeof(int)); // current amount of chars in word
+    *char_count = 0;
+
+    do {
+        
+        ssize_t i = read(*text, buffer, 1);
+        if(*i == -1) {
+            printf("Error reading file: errno = %i\n", errno);
+            return errno;
+        } else if(*i == 0) {
+            return 0;
+        }
+        *char_count += i;
+
+        word[*char_count] = buffer;
+
+        if(IS_WHITESPACE(word[*char_count])) {
+            word[*char_count] == '\0'; // Terminate word
+            add(hash_map, word, 1); // Add word to hashmap (with dummy 1 as third parameter because making two different functions to add would be blasphemy)
+            *char_count = 0; // Start new word
+        }
+    } while (*char_count != 0)
+}
+
+int main(int argc, char *argv[]) {
+    int *text = (int *) malloc(sizeof(int)); // File descriptor
     HashMap *hash_map = hashmap(MAP_SIZE);
 
-    if(argc < 2) {
-        printf("Not enough arguments. argc = %i", argc);
-        return argc;
-    }
+    word_freak = getenv("WORD_FREAK"); 
+    
+    if(argc == 1) {
 
-    for(int i = 1; i < argc; i++) {
-        int *text = (int *) malloc(sizeof(int));
-        *text = open(argv[i], O_RDONLY); // reading only
+        /* READ FROM ENVIRONMENT VARIABLE */
+        if(word_freak != NULL) {
 
-        if(*text == -1) {
-            printf("Error opening file %i: errno = %i\n", i, errno);
-            return errno;
+            *text = open(word_freak, O_RDONLY); // reading only
+
+            if(*text == -1) {
+                printf("Error opening file %i: errno = %i\n", i, errno);
+                return errno;
+            }
+
+            freak(text); // This is where the magic happens
+
+            if(close(*text) == -1) {  // closing file
+                printf("Error closing file %i: errno = %i\n", i, errno);
+                return errno;
+            }
+        
+        /* READ FROM STDIN PIPE */
+        } else {
+
+            
+
         }
 
-        char *buffer = (char *) malloc(sizeof(char)); // allocating buffer
-        char *word = (char *) malloc(MAX_WORD_LEN*sizeof(char)); 
-        int *char_count = (int *) malloc(sizeof(int));
-        *char_count = 0;
+    /* READ FROM COMMAND LINE ARGUMENTS */
+    } else {
 
-        /*
-            READING FILE BY WORD BY CHARACTER
-            Loop through the file by each character, saving each character in 'word'
-            If the character is a space or new line, add the null character to word to signify end of word,
-            then add the word to hashmap
+        if(argc < 2) {
+            printf("Not enough arguments. argc = %i", argc);
+            return argc;
+        }
 
-            We pass in 'word' to add since the HashBin constructor COPIES the passed in char*.
-            Thus, in-place reading of the word works as intended
+        // Loop through argv[]
+        for(int i = 1; i < argc; i++) {
+            *text = open(argv[i], O_RDONLY); // reading only
 
-            Next word will start the index at 0, so each word is saved in 'word' sequentially
-        */
-        for (*char_count += read(*text, buffer, 1); *char_count != 0;) {
-            word[*char_count] = buffer;
-            if(word[*char_count] == ' ' || word[*char_count] == '\n') {
-                word[*char_count] == '\0'; // Terminate word
-                add(hash_map, word); // Add word to hashmap
-                *char_count = 0; // Start new word
+            if(*text == -1) {
+                printf("Error opening file %i: errno = %i\n", i, errno);
+                return errno;
+            }
+
+            freak(text, hash_map); // This is wehre the magic happens
+
+            if(close(*text) == -1) {  // closing file
+                printf("Error closing file %i: errno = %i\n", i, errno);
+                return errno;
             }
         }
-
-
-        if(close(*text) == -1) {  // closing file
-            printf("Error closing file %i: errno = %i\n", i, errno);
-            return errno;
-        }
-
-        free(text);
-        text = NULL;
-
-        free(buffer);
-        buffer = NULL;
-
-        free(bytes_read);
-        bytes_read = NULL;
     }
+
+    free(text);
+    text = NULL;
+
+    free(buffer);
+    buffer = NULL;
+
+    free(bytes_read);
+    bytes_read = NULL;
+    
     return 0;
 }
