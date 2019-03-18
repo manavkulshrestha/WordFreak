@@ -2,18 +2,18 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>  // POSIX NAMES, read, and read
+#include <stdio.h> // sprintf
 
 /* CONSTRUCTOR */
-HashMap *hashmap(int size, int collision_handling) {
+HashMap *hashmap(int size) {
     HashMap *hash_map = (HashMap *) malloc(sizeof(HashMap));
 
+    hash_map->size = (int *) malloc(sizeof(int));
     *(hash_map->size) = size;
 
     hash_map->arr = (HashBin **) malloc(size*sizeof(HashBin *));
     for(int i=0; i<size; i++)
         hash_map->arr[i] = NULL;
-
-    *(hash_map->collison_handling) = collison_handling;
 
     return hash_map;
 }
@@ -55,61 +55,53 @@ int *hash(char *word, int *map_size) {
         calls rehash() in the even that hash_map is full quandratic probing is being used.
 
     Returns:
-        int *index - index pointer of where the word is positioned in the hash_map's array.
+        int ret - index of where the word is positioned in the hash_map's array.
 */
-void add(HashMap *hash_map, char *word) {
+int add(HashMap *hash_map, char *word) {
     int *index = hash(word, hash_map->size);
 
     if(hash_map->arr[*index] == NULL) {
-        hash_map->arr[*index] = hashbin(word);
+        hash_map->arr[*index] = hashbin(word, 1);
     } else {
-        if(*collison_handling == COLLISION_CHAINING) {
-            // dealing with hash collision using chaining
-            HashBin *curr = hash_map->arr[*index];
-            while(1) {
-                if(strcmp(curr->word, word) == 0) {
-                    (*(curr->frequency))++;
+        // dealing with hash collision using quadratic probing
+        int *initial_index = (int *) malloc(sizeof(int));
+        *initial_index = *index;
+        
+        int *probe = (int *) malloc(sizeof(int));
+        *probe = 1;
+
+        while(1) {
+            if(hash_map->arr[*index] == NULL) {
+                hash_map->arr[*index] = hashbin(word, 1);
+                break;
+            } else if(strcmp(hash_map->arr[*index]->word, word) == 0) {
+                (*(hash_map->arr[*index]->frequency))++;
+                break;
+            } else {
+                *index += *probe;
+
+                if(*index == *initial_index) {
+                    rehash(hash_map);
+                    add(hash_map, word);
                     break;
-                } else if(curr->link == NULL) {
-                    curr->link = hashbin(word);
-                    break;
-                } else {
-                    curr = curr->link;
                 }
             }
-        } else {// *collison_handling == COLLISION_PROBING
-            // dealing with hash collision using quadratic probing
-            int *initial_index = (int *) malloc(sizeof(int));
-            *initial_index = *index;
-            
-            int *probe = (int *) malloc(sizeof(int)); 
-            *probe = 1;
 
-            while(1) {
-                if(hash_map->arr[*index] == NULL) {
-                    hash_map->arr[*index] = hashbin(word, frequency);
-                } else {
-                    *index += *probe
-
-                    if(*index == *initial_index) {
-                        rehash(hash_map);
-                        add(hash_map, word, frequency);
-                        break;
-                    }
-                }
-
-                *probe *= 4;
-            }
-
-            free(initial_index);
-            initial_index = NULL;
-
-            free(probe);
-            probe = NULL;
+            *probe *= 4;
         }
+
+        free(initial_index);
+        initial_index = NULL;
+
+        free(probe);
+        probe = NULL;
     }
 
-    return index;
+    int ret = *index;
+    free(index);
+    index = NULL;
+
+    return ret;
 }
 
 
@@ -130,7 +122,7 @@ void print_sorted(HashMap *hash_map) {
 
     qsort(temp_arr, *(hash_map->size), sizeof(hash_map), reverse_compare_bin);
 
-    for(int i=0; i<hash_map->size && temp_arr[i] != NULL; i++) {
+    for(int i=0; i<*(hash_map->size) && temp_arr[i] != NULL; i++) {
         buffer = (char *) malloc(50*sizeof(char));
         sprintf(buffer, "%s:\t\t%i\n", temp_arr[i]->word, *(temp_arr[i]->frequency));
 
@@ -140,7 +132,7 @@ void print_sorted(HashMap *hash_map) {
         buffer = NULL;
     }
     
-    for(int i=0; i<hash_map->size && temp_arr[i] != NULL; i++) {
+    for(int i=0; i<*(hash_map->size) && temp_arr[i] != NULL; i++) {
         free_bin(temp_arr[i]);
         temp_arr[i] = NULL;
     }
@@ -149,6 +141,27 @@ void print_sorted(HashMap *hash_map) {
     temp_arr = NULL;
 }
 
+/*
+    Arguments:
+        char *format - Format string for how to print HashBin. Must contain %s and %i in that order.
+        HashMap *hash_map - the HashMap to print.
+
+    Description:
+        Prints the hash_map provided, formatted in the way outlined by format
+*/
+void print_map(char *format, HashMap *hash_map) {
+    char *buffer = (char *) malloc(50*sizeof(char));
+
+    for(int i=0; i<*(hash_map->size); i++) {
+        if(hash_map->arr[i] != NULL) {
+            sprintf(buffer, format, hash_map->arr[i]->word, *(hash_map->arr[i]->frequency));
+            write(STDOUT_FILENO, buffer, strlen(buffer));
+        }
+    }
+            
+    free(buffer);
+    buffer = NULL;
+}
 
 /*
     Arguments:
@@ -159,17 +172,17 @@ void print_sorted(HashMap *hash_map) {
 
 */
 void rehash(HashMap *hash_map) {
+    write(STDOUT_FILENO, "REHASH TRIGGERED\n", strlen("REHASH TRIGGERED\n"));
     HashMap *new_map = hashmap(*(hash_map->size)*2);
 
     for(int i=0; i<*(hash_map->size); i++) {
         if(hash_map->arr[i] != NULL) {
-            int *temp_index = add(new_map, hash_map->word);
-            new_map->arr[*temp_index];
+            new_map->arr[add(new_map, hash_map->arr[i]->word)]->frequency = hash_map->arr[i]->frequency;
         }
     }
 
     free_map(hash_map);
-    HashMap *hash_map = hashmap(*(new_map->size));
+    hash_map = hashmap(*(new_map->size));
 
     memcpy(hash_map->arr, new_map->arr, *(hash_map->size));
 
@@ -193,9 +206,6 @@ void free_map(HashMap *hash_map) {
             hash_map->arr[i] = NULL;
         }
     }
-
-    free(collison_handling);
-    collison_handling = NULL;
 
     free(hash_map);
     hash_map = NULL;

@@ -3,17 +3,16 @@
 #include <stdlib.h>
 
 /* CONSTRUCTOR */
-HashBin *hashbin(char *word, int frequency){ 
+HashBin *hashbin(char *word, int frequency) { 
     HashBin *new_bin = (HashBin *) malloc(sizeof(HashBin));
 
     int *len = (int *) malloc(sizeof(int));
     *len = strlen(word);
-    new_bin->word = (char *) malloc(((*len)+1)*sizeof(char));
-    strncpy(new_bin->word, word, *len+1);
+    new_bin->word = (char *) malloc((++(*len))*sizeof(char));
+    strncpy(new_bin->word, word, *len);
 
+    new_bin->frequency = (int *) malloc(sizeof(int));
     *(new_bin->frequency) = frequency;
-
-    new_bin->link = NULL;
 
     free(len);
     len = NULL;
@@ -21,7 +20,7 @@ HashBin *hashbin(char *word, int frequency){
     return new_bin;
 }
 
-/*
+/* DOESN'T WORK. FIX
     Arguments:
         const void *a - First object to compare.
         const void *b - Second object to compare.
@@ -43,7 +42,11 @@ int reverse_compare_bin(const void *a, const void *b) {
         return 1;
     if(b == NULL)
         return -1;
-    return *(((HashBin *)b)->frequency)-*(((HashBin *)a)->frequency);
+
+    int freq_a = *(((HashBin *) a)->frequency);
+    int freq_b = *(((HashBin *) b)->frequency);
+
+    return freq_b-freq_a;
 }
 
 /*
@@ -62,7 +65,4 @@ void free_bin(HashBin *hash_bin) {
 
     free(hash_bin->frequency);
     hash_bin->frequency = NULL;
-
-    free_bin(hash_bin->link);
-    hash_bin->link = NULL;
 }

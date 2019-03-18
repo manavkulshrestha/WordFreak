@@ -8,10 +8,43 @@
 #include "hashmap.h"
 
 // #define IS_WHITESPACE(c) c == ' ' || c == '\n'
-#define IS_ALPHANUMERIC(c) ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9')
+#define IS_ALPHANUMERIC(c) ('A' <= (c) && (c) <= 'Z') || ('a' <= (c) && (c) <= 'z') || ('0' <= (c) && (c) <= '9')
 
 #define MAX_WORD_LEN 30
 #define MAP_SIZE 5000
+
+int open_file(char *file_name, int flags) {
+    int *text = (int *) malloc(sizeof(int)); // File descriptor
+    *text = open(word_freak, flags); // reading only
+    char *print_buffer = (char *) malloc(50*sizeof(char));    
+
+    if(*text == -1) {
+        sprintf(print_buffer, "Error reading file: errno = %i", errno);
+        write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+        exit(errno);
+    }
+
+    free(print_buffer);
+    print_buffer = NULL;
+
+    return text;
+}
+
+void close_file(int *file_descriptor) {
+    char *print_buffer = (char *) malloc(50*sizeof(char));
+
+    if(close(*file_descriptor) == -1) {  // closing file
+        sprintf(print_buffer, "Error closing file: errno = %i", errno);
+        write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
+        return errno;
+    }
+
+    free(print_buffer);
+    print_buffer = NULL;
+
+    free(text);
+    text = NULL;
+}
 
 /*
     READING FILE BY WORD BY CHARACTER
@@ -51,7 +84,7 @@ int freak(int *text, HashMap *hash_map) {
 
         if(!IS_ALPHANUMERIC(word[*char_count])) {
             word[*char_count] == '\0'; // Terminate word
-            free(add(hash_map, word, 1)); // Add word to hashmap (with dummy 1 as third parameter because making two different functions to add would be blasphemy)
+            add(hash_map, word); // Add word to hashmap
             *char_count = 0; // Start new word
         }
     } while (*char_count != 0)
@@ -72,7 +105,7 @@ int freak(int *text, HashMap *hash_map) {
 int main(int argc, char *argv[]) {
     int *text = (int *) malloc(sizeof(int)); // File descriptor
     HashMap *hash_map = hashmap(MAP_SIZE);
-    char *print_buffer = (char *) malloc(sizeof(char));
+    char *print_buffer = (char *) malloc(50*sizeof(char));
 
     switch(argc) {
         case 1:
@@ -80,45 +113,24 @@ int main(int argc, char *argv[]) {
 
             if(word_freak != NULL) {
                 /* READ FROM ENVIRONMENT VARIABLE */
-                *text = open(word_freak, O_RDONLY); // reading only
-
-                if(*text == -1) {
-                    sprintf(print_buffer, "Error reading file: errno = %i", errno);
-                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-                    return errno;
-                }
+                *text = open_file(word_freak, O_RDONLY);
 
                 freak(text, hash_map); // This is where the magic happens
 
-                if(close(*text) == -1) {  // closing file
-                    sprintf(print_buffer, "Error closing file: errno = %i", errno);
-                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-                    return errno;
-                }
+                close_file(text);
             } else {
-                
-                
-
+                /* READ FROM STDIN */
+                freak(STDIN_FILENO, hash_map);
             }
             break;
         default:
              /* READ FROM *argv[] */
             for(int i = 1; i < argc; i++) {
-                *text = open(argv[i], O_RDONLY); // reading only
-
-                if(*text == -1) {
-                    sprintf(print_buffer, "Error opening file: errno = %i", errno);
-                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-                    return errno;
-                }
+                *text = open_file(argv[i], O_RDONLY); // reading only
 
                 freak(text, hash_map); // This is wehre the magic happens
 
-                if(close(*text) == -1) {  // closing file
-                    sprintf(print_buffer, "Error closing file: errno = %i", errno);
-                    write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-                    return errno;
-                }
+                close_file(text);
             }
     }
 

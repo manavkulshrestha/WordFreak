@@ -4,7 +4,6 @@
 typedef struct HashBin {
     char *word;
     int *frequency;
-    struct HashBin *link;
 } HashBin;
 
 HashBin *hashbin(char *word, int frequency);
