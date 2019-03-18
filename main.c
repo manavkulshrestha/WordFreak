@@ -4,6 +4,7 @@
 #include <fcntl.h> // open flags
 #include <stdlib.h> // for malloc
 #include <errno.h>
+#include <string.h>
 #include "hashbin.h"
 #include "hashmap.h"
 
@@ -15,7 +16,7 @@
 
 int open_file(char *file_name, int flags) {
     int *text = (int *) malloc(sizeof(int)); // File descriptor
-    *text = open(word_freak, flags); // reading only
+    *text = open(file_name, flags); // reading only
     char *print_buffer = (char *) malloc(50*sizeof(char));    
 
     if(*text == -1) {
@@ -27,7 +28,7 @@ int open_file(char *file_name, int flags) {
     free(print_buffer);
     print_buffer = NULL;
 
-    return text;
+    return *text;
 }
 
 void close_file(int *file_descriptor) {
@@ -36,14 +37,14 @@ void close_file(int *file_descriptor) {
     if(close(*file_descriptor) == -1) {  // closing file
         sprintf(print_buffer, "Error closing file: errno = %i", errno);
         write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-        return errno;
+        exit(errno);
     }
 
     free(print_buffer);
     print_buffer = NULL;
 
-    free(text);
-    text = NULL;
+    free(file_descriptor);
+    file_descriptor = NULL;
 }
 
 /*
@@ -57,37 +58,39 @@ void close_file(int *file_descriptor) {
 
     Next word will start the index at 0, so each word is saved in 'word' sequentially
 */
-int freak(int *text, HashMap *hash_map) {
+void sort_words(int *text, HashMap *hash_map) {
     char *buffer = (char *) malloc(sizeof(char)); // allocating buffer
     char *word = (char *) malloc(MAX_WORD_LEN*sizeof(char)); // in-place current word
     int *char_count = (int *) malloc(sizeof(int)); // current amount of chars in word
     *char_count = 0;
 
     char *print_buffer = (char *) malloc(50*sizeof(char));
+    ssize_t *i = (ssize_t *) malloc(sizeof(ssize_t));
 
     do {
-        
-        ssize_t *i = (ssize_t *) malloc(sizeof(ssize_t));
         *i = read(*text, buffer, 1);
 
         switch(*i) {
             case -1:
                 sprintf(print_buffer, "Error reading file: errno = %i", errno);
                 write(STDOUT_FILENO, print_buffer, strlen(print_buffer));
-                break; 
+                exit(errno); 
             case 0:
-                return 0;
+                return; // END OF FILE
         }
-        *char_count += i;
+        *char_count += *i;
 
-        word[*char_count] = buffer;
+        word[*char_count] = *buffer;
 
         if(!IS_ALPHANUMERIC(word[*char_count])) {
-            word[*char_count] == '\0'; // Terminate word
+            word[*char_count] = '\0'; // Terminate word
             add(hash_map, word); // Add word to hashmap
             *char_count = 0; // Start new word
         }
-    } while (*char_count != 0)
+    } while (*char_count != 0);
+
+    free(i);
+    i = NULL;
 
     free(buffer);
     buffer = NULL;
@@ -98,29 +101,31 @@ int freak(int *text, HashMap *hash_map) {
     free(char_count);
     char_count = NULL;
 
-    free_bin(print_buffer);
-    print_buffer = NULL;
+    // Why is a char* being passed into a function that takes in a HashBin*?
+    // free_bin(print_buffer);
+    // print_buffer = NULL;
 }
 
 int main(int argc, char *argv[]) {
     int *text = (int *) malloc(sizeof(int)); // File descriptor
     HashMap *hash_map = hashmap(MAP_SIZE);
     char *print_buffer = (char *) malloc(50*sizeof(char));
+    char *path = (char *) malloc(50*sizeof(char));
 
     switch(argc) {
         case 1:
-            word_freak = getenv("WORD_FREAK"); 
+            path = getenv("WORD_FREAK"); 
 
-            if(word_freak != NULL) {
+            if(path != NULL) {
                 /* READ FROM ENVIRONMENT VARIABLE */
-                *text = open_file(word_freak, O_RDONLY);
+                *text = open_file(path, O_RDONLY);
 
-                freak(text, hash_map); // This is where the magic happens
+                sort_words(text, hash_map); // This is where the magic happens
 
                 close_file(text);
             } else {
                 /* READ FROM STDIN */
-                freak(STDIN_FILENO, hash_map);
+                sort_words(STDIN_FILENO, hash_map);
             }
             break;
         default:
@@ -128,7 +133,7 @@ int main(int argc, char *argv[]) {
             for(int i = 1; i < argc; i++) {
                 *text = open_file(argv[i], O_RDONLY); // reading only
 
-                freak(text, hash_map); // This is wehre the magic happens
+                sort_words(text, hash_map); // This is wehre the magic happens
 
                 close_file(text);
             }
@@ -137,11 +142,11 @@ int main(int argc, char *argv[]) {
     free(text);
     text = NULL;
 
-    free(buffer);
-    buffer = NULL;
+    free(print_buffer);
+    print_buffer = NULL;
 
-    free(bytes_read);
-    bytes_read = NULL;
+    free(path);
+    path = NULL;
     
     return 0;
 }
