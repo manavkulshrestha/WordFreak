@@ -22,7 +22,7 @@ int main(int argc, char **argv, char **envp) {
 	// for(int i=0; envp[i]; i++)
 	// 	printf("%s\n", envp[i]);
 
-	// char *buf = (char *) malloc(50*sizeof(char));
+	// char *buf = (char *) malloc(100*sizeof(char));
 
 	// ssize_t len = read(STDIN_FILENO, buf, 49);
 	// buf[len] = '\0';
@@ -36,19 +36,25 @@ int main(int argc, char **argv, char **envp) {
 
 	// free(buf);
 
-	HashMap *hm = hashmap(5000);
+	HashMap *hm = hashmap(2);
 
-	add(hm, "bla");
-	add(hm, "bla");
-
-	printf("HM: \n");
-	print_map("%s:\t\t%i\n", hm);
-
-	add(hm, "ba");
-	add(hm, "a");
+	add(hm, "1");
 
 	printf("HM: \n");
 	print_map("%s:\t\t%i\n", hm);
+	printf("\n");
+
+	add(hm, "2");
+
+	printf("HM: \n");
+	print_map("%s:\t\t%i\n", hm);
+	printf("\n");
+
+	add(hm, "3");
+
+	printf("HM: \n");
+	print_map("%s:\t\t%i\n", hm);
+	printf("\n");
 
 	return 0;
 }

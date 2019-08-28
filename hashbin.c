@@ -1,52 +1,57 @@
 #include "hashbin.h"
+#include <stdio.h> // printf
+#include <sys/stat.h> // open
+#include <unistd.h>  // POSIX NAMES and read
+#include <fcntl.h> // open flags
+#include <stdlib.h> // for malloc
+#include <errno.h>
 #include <string.h>
-#include <stdlib.h>
+
+/*
+    Arguments:
+        char *buffer - String to write to STDOUT
+
+    Description:
+        Writes to standard out with write(), and performs an error check on the call
+*/
+void write_with_error_check(char *buffer) {
+    if(write(STDOUT_FILENO, buffer, strlen(buffer)) == -1) {
+        sprintf(buffer, "Error in writing to STDOUT_FILENO. errno = %i", errno);
+        write(STDOUT_FILENO, buffer, strlen(buffer));
+        exit(errno);
+    }
+}
 
 /* CONSTRUCTOR */
 HashBin *hashbin(char *word, int frequency) { 
     HashBin *new_bin = (HashBin *) malloc(sizeof(HashBin));
+    if(new_bin == NULL) {
+        exit(-1);
+    }
 
     int *len = (int *) malloc(sizeof(int));
+    if(len == NULL) {
+        exit(-1);
+    }
     *len = strlen(word);
     new_bin->word = (char *) malloc((++(*len))*sizeof(char));
+    if(new_bin->word == NULL) {
+        exit(-1);
+    }
     strncpy(new_bin->word, word, *len);
 
     new_bin->frequency = (int *) malloc(sizeof(int));
+    if(new_bin->frequency == NULL) {
+        exit(-1);
+    }
     *(new_bin->frequency) = frequency;
+
+    new_bin->link = NULL;
 
     free(len);
     len = NULL;
 
     return new_bin;
-}
-
-/* DOESN'T WORK. FIX
-    Arguments:
-        const void *a - First object to compare.
-        const void *b - Second object to compare.
-
-    Description:
-        Compares the two objects provided (a and b) and returns an int representing the result.
-        The comparision is used to sort in descending order based on frequency.
-        Note that NULL is bigger than everything else. 
-
-    Returns:
-        int result = {
-            (result > 0)    if a < b
-            (result == 0)   if a == b
-            (result < 0)    if a > b
-        }
-*/
-int reverse_compare_bin(const void *a, const void *b) {
-    if(a == NULL)
-        return 1;
-    if(b == NULL)
-        return -1;
-
-    int freq_a = *(((HashBin *) a)->frequency);
-    int freq_b = *(((HashBin *) b)->frequency);
-
-    return freq_b-freq_a;
 }
 
 /*
@@ -65,4 +70,9 @@ void free_bin(HashBin *hash_bin) {
 
     free(hash_bin->frequency);
     hash_bin->frequency = NULL;
+
+    free_bin(hash_bin->link);
+    hash_bin->link = NULL;
+
+    free(hash_bin);
 }

@@ -4,10 +4,12 @@
 typedef struct HashBin {
     char *word;
     int *frequency;
+    struct HashBin *link;
 } HashBin;
 
 HashBin *hashbin(char *word, int frequency);
-int reverse_compare_bin(const void *a, const void *b);
 void free_bin(HashBin *bin);
+
+void write_with_error_check(char *buffer);
 
 #endif
